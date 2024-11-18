@@ -1,18 +1,18 @@
-pip install gdown
 import streamlit as st
 import torch
 import torchvision.transforms as transforms
 from torchvision import models
 from PIL import Image
 import torch.nn as nn
+import os
+import gdown
 
 # Определение класса EnhancedModel
 class EnhancedModel(nn.Module):
     def __init__(self, base_model, num_classes):
         super(EnhancedModel, self).__init__()
-        # Используем все слои, кроме последних двух
         self.features = nn.Sequential(*list(base_model.children())[:-2])
-        last_conv_out_channels = 512  # Для ResNet18 это фиксированное значение
+        last_conv_out_channels = 512  # Для ResNet18
         self.bn = nn.BatchNorm2d(last_conv_out_channels)
         self.fc = nn.Sequential(
             nn.AdaptiveAvgPool2d((1,1)),
@@ -25,17 +25,31 @@ class EnhancedModel(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        x = self.bn(x)  # Batch Normalization
+        x = self.bn(x)
         x = self.fc(x)
         return x
 
-# Загрузка сохранённой модели
+# Загрузка сохранённой модели из Google Drive
 @st.cache(allow_output_mutation=True)
 def load_model():
+    model_path = 'enhanced_model.pth'
+    if not os.path.exists(model_path):
+        # Используем идентификатор файла из вашей ссылки
+        file_id = '1Jgh5Y8pauNF3zOslFqFNewcYlR_qk7m9'
+        url = f'https://drive.google.com/uc?id={file_id}'
+        st.write('Загрузка модели...')
+        try:
+            gdown.download(url, model_path, quiet=False)
+            st.write('Модель загружена.')
+        except Exception as e:
+            st.error(f"Ошибка при загрузке модели: {e}")
+            st.stop()
+    else:
+        st.write('Модель уже загружена.')
     num_classes = 2
     base_model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
     model = EnhancedModel(base_model, num_classes)
-    model.load_state_dict(torch.load("enhanced_model.pth", map_location=torch.device('cpu')))
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
     return model
 
