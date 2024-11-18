@@ -3,12 +3,37 @@ import torch
 import torchvision.transforms as transforms
 from torchvision import models
 from PIL import Image
+import torch.nn as nn
+
+# Определение класса EnhancedModel
+class EnhancedModel(nn.Module):
+    def __init__(self, base_model, num_classes):
+        super(EnhancedModel, self).__init__()
+        # Используем все слои, кроме последних двух
+        self.features = nn.Sequential(*list(base_model.children())[:-2])
+        last_conv_out_channels = 512  # Для ResNet18 это фиксированное значение
+        self.bn = nn.BatchNorm2d(last_conv_out_channels)
+        self.fc = nn.Sequential(
+            nn.AdaptiveAvgPool2d((1,1)),
+            nn.Flatten(),
+            nn.Linear(last_conv_out_channels, 512),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(512, num_classes)
+        )
+
+    def forward(self, x):
+        x = self.features(x)
+        x = self.bn(x)  # Batch Normalization
+        x = self.fc(x)
+        return x
 
 # Загрузка сохранённой модели
-@st.cache_resource
+@st.cache(allow_output_mutation=True)
 def load_model():
-    model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
-    model.fc = torch.nn.Linear(model.fc.in_features, 2)  # Количество классов = 2
+    num_classes = 2
+    base_model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+    model = EnhancedModel(base_model, num_classes)
     model.load_state_dict(torch.load("enhanced_model.pth", map_location=torch.device('cpu')))
     model.eval()
     return model
@@ -40,4 +65,4 @@ if uploaded_file:
         outputs = model(img_tensor)
         _, predicted = torch.max(outputs, 1)
         class_names = ["Normal", "Pothole"]
-        st.write(f"Prediction: **{class_names[predicted[0]]}**")
+        st.write(f"Prediction: **{class_names[predicted.item()]}**")
