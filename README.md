@@ -39,5 +39,5 @@ The goal of this project is to classify road images into two categories: `Pothol
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Pothole_Detection.git
+   git clone https://github.com/aruzhankenzhebek/Pothole_Detection.git
    cd Pothole_Detection
