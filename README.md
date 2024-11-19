@@ -8,11 +8,6 @@ This project involves building a classification model to detect potholes in road
 - [Overview](#overview)
 - [Features](#features)
 - [Setup](#setup)
-- [Usage](#usage)
-- [Results](#results)
-- [Technologies Used](#technologies-used)
-- [Contributing](#contributing)
-- [License](#license)
 
 ---
 
